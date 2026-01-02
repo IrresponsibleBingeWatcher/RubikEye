@@ -113,106 +113,52 @@ class RubikSolver:
                 
         return grid_names
 
-    def format_solution_with_orientation(self, solution_str):
+    def format_solution_compact(self, solution_str):
         """
-        Format solution with physical cube orientation instructions.
-        Standard orientation: Green facing you, White on top
+        Compact single-line format for solution steps
         """
         moves = solution_str.split()
         instructions = []
         
-        # Color names for faces
+        # Short color codes
         face_colors = {
-            'U': 'White',
-            'D': 'Yellow',
-            'F': 'Green',
-            'B': 'Blue',
-            'L': 'Orange',
-            'R': 'Red'
+            'U': 'Wht', 'D': 'Yel', 'F': 'Grn',
+            'B': 'Blu', 'L': 'Org', 'R': 'Red'
         }
         
-        # Current cube orientation (what's facing you, what's on top)
-        # Start with standard: Green front, White top
-        current_front = 'F'
-        current_top = 'U'
-        
-        def get_orientation_instruction(face_to_turn):
-            """Determine how to hold the cube before turning a face"""
-            nonlocal current_front, current_top
-            
-            orientation = ""
-            
-            # Determine required front and top for each face
-            orientations = {
-                'U': ('F', 'U'),  # Green front, White top (any front works)
-                'D': ('F', 'D'),  # Green front, Yellow top (flip cube)
-                'F': ('F', 'U'),  # Green front, White top
-                'B': ('B', 'U'),  # Blue front, White top
-                'L': ('L', 'U'),  # Orange front, White top
-                'R': ('R', 'U'),  # Red front, White top
-            }
-            
-            required_front, required_top = orientations[face_to_turn]
-            
-            # Special case: U and D can be done from any front position
-            if face_to_turn == 'U' and current_top == 'U':
-                orientation = f"Hold: {face_colors[current_front]} facing you, {face_colors['U']} on top"
-            elif face_to_turn == 'D' and current_top == 'U':
-                orientation = f"Hold: {face_colors[current_front]} facing you, {face_colors['U']} on top (turn bottom layer)"
-            else:
-                # Need specific orientation
-                if current_front != required_front or current_top != required_top:
-                    orientation = f"Hold: {face_colors[required_front]} facing you, {face_colors[required_top]} on top"
-                    current_front = required_front
-                    current_top = required_top
-                else:
-                    orientation = f"Hold: {face_colors[required_front]} facing you, {face_colors[required_top]} on top"
-            
-            return orientation
+        # Position names
+        positions = {
+            'U': 'TOP', 'D': 'BOT', 'F': 'FRT',
+            'B': 'BCK', 'L': 'LFT', 'R': 'RGT'
+        }
         
         for i, move in enumerate(moves, 1):
             face = move[0]
             modifier = move[1:] if len(move) > 1 else ""
             
-            # Get orientation instruction
-            orientation = get_orientation_instruction(face)
-            
-            # Get turn direction
+            # Direction symbol
             if modifier == "'":
-                direction = "Counter-Clockwise (left)"
+                direction = "↶"  # counter-clockwise
+                dir_text = "CCW"
             elif modifier == "2":
-                direction = "180° (half turn)"
+                direction = "↻"  # 180
+                dir_text = "180°"
             else:
-                direction = "Clockwise (right)"
+                direction = "↷"  # clockwise
+                dir_text = "CW"
             
-            # Get face name and description
-            face_name = face_colors[face]
-            
-            # Determine which face to turn based on position
-            if face == 'U':
-                position = "TOP"
-            elif face == 'D':
-                position = "BOTTOM"
-            elif face == 'F':
-                position = "FRONT (facing you)"
-            elif face == 'B':
-                position = "BACK (away from you)"
-            elif face == 'L':
-                position = "LEFT"
+            # Determine orientation
+            if face in ['U', 'D', 'F']:
+                orient = "Grn→You, Wht→Top"
             elif face == 'R':
-                position = "RIGHT"
-            else:
-                position = face
+                orient = "Grn→You, Wht→Top"
+            elif face == 'L':
+                orient = "Org→You, Wht→Top"
+            elif face == 'B':
+                orient = "Blu→You, Wht→Top"
             
-            instruction = {
-                'number': i,
-                'orientation': orientation,
-                'face': face_name,
-                'position': position,
-                'direction': direction,
-                'move': move
-            }
-            
+            # Compact format: Step [Move] Orient | Face Dir
+            instruction = f"{i:2d}. [{move:3s}] {orient:20s} │ {positions[face]}({face_colors[face]}) {direction} {dir_text}"
             instructions.append(instruction)
         
         return instructions
@@ -374,30 +320,22 @@ class RubikSolver:
             solution = kociemba.solve(cube_string)
             print(f"\n✓ SUCCESS! Solution found!")
             print(f"Moves: {solution}")
-            print(f"Number of moves: {len(solution.split())}")
+            print(f"Total moves: {len(solution.split())}")
             
-            steps = self.format_solution_with_orientation(solution)
+            steps = self.format_solution_compact(solution)
             
             print("\n" + "="*70)
-            print("SOLUTION - FOLLOW THESE STEPS")
+            print("SOLUTION (Start: Green→You, White→Top)")
             print("="*70)
-            print("\nStarting position: Green facing you, White on top")
-            print()
+            print("Legend: ↷=Clockwise ↶=Counter-Clockwise ↻=180°")
+            print("-"*70)
             
             for step in steps:
-                print(f"Step {step['number']}:")
-                print(f"  {step['orientation']}")
-                print(f"  Turn {step['position']} ({step['face']}) {step['direction']}")
-                print(f"  [{step['move']}]")
-                print()
+                print(step)
             
             print("="*70)
-            print("✓ Cube should now be solved!")
+            print("✓ Follow each step in order. Cube should be solved!")
             print("="*70)
-            
-            # Also print condensed version
-            print("\nCondensed notation:")
-            print(solution)
                 
         except Exception as e:
             print("\n" + "="*70)
